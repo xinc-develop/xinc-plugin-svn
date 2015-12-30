@@ -26,10 +26,14 @@
  *            Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * @link      http://code.google.com/p/xinc/
  */
+ 
+namespace Xinc\Plugin\Svn\ModificationSet;
 
-require_once 'Xinc/Plugin/Repos/ModificationSet/AbstractTask.php';
+use Xinc\Core\Build\BuildInterface;
+use Xinc\Core\Exception\MalformedConfig;
+use Xinc\Core\Plugin\ModificationSet\BaseTask;
 
-class Xinc_Plugin_Repos_ModificationSet_Svn_Task extends Xinc_Plugin_Repos_ModificationSet_AbstractTask
+class Task extends BaseTask
 {
     /**
      * Directory containing the Subversion project.
@@ -213,7 +217,7 @@ class Xinc_Plugin_Repos_ModificationSet_Svn_Task extends Xinc_Plugin_Repos_Modif
      *
      * @return Xinc_Plugin_Repos_ModificationSet_Result The result of the check.
      */
-    public function checkModified(Xinc_Build_Interface $build)
+    public function checkModified(BuildInterface $build)
     {
         return $this->plugin->checkModified($build, $this);
     }
@@ -227,12 +231,12 @@ class Xinc_Plugin_Repos_ModificationSet_Svn_Task extends Xinc_Plugin_Repos_Modif
     public function validateTask()
     {
         if (!class_exists('VersionControl_SVN')) {
-            throw new Xinc_Exception_MalformedConfig(
+            throw new MalformedConfig(
                 'PEAR::VersionControl_SVN doesn\'t exists. You need to install it to use this task.'
             );
         }
         if (!isset($this->strDirectory)) {
-            throw new Xinc_Exception_MalformedConfig(
+            throw new MalformedConfig(
                 'Element modificationSet/svn - required attribute "directory" is not set.'
             );
         }

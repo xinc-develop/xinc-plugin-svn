@@ -26,16 +26,12 @@
  *            Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * @link      http://code.google.com/p/xinc/
  */
+ 
+namespace Xinc\Plugin\Svn\ModificationSet;
 
-require_once 'Xinc/Exception/ModificationSet.php';
-require_once 'Xinc/Ini.php';
-require_once 'Xinc/Logger.php';
-require_once 'Xinc/Plugin/Abstract.php';
-require_once 'Xinc/Plugin/Repos/ModificationSet/AbstractTask.php';
-require_once 'Xinc/Plugin/Repos/ModificationSet/Result.php';
-require_once 'Xinc/Plugin/Repos/ModificationSet/Svn/Task.php';
+use Xinc\Core\Plugin\Base;
 
-class Xinc_Plugin_Repos_ModificationSet_Svn extends Xinc_Plugin_Abstract
+class Plugin extends Base
 {
     /**
      * @var VersionControl_SVN The svn object.
@@ -46,6 +42,11 @@ class Xinc_Plugin_Repos_ModificationSet_Svn extends Xinc_Plugin_Abstract
      * @var Xinc_Plugin_Repos_ModificationSet_Svn_Task The task config.
      */
     private $task = null;
+    
+    public function getName()
+    {
+		return 'ModificationSet/SVN';
+	}
 
     /**
      * Returns definition of task.
@@ -54,7 +55,7 @@ class Xinc_Plugin_Repos_ModificationSet_Svn extends Xinc_Plugin_Abstract
      */
     public function getTaskDefinitions()
     {
-        return array(new Xinc_Plugin_Repos_ModificationSet_Svn_Task($this));
+        return array(new Task($this));
     }
 
     /**
@@ -283,12 +284,10 @@ class Xinc_Plugin_Repos_ModificationSet_Svn extends Xinc_Plugin_Abstract
      *
      * @return boolean True if plugin can run properly otherwise false.
      */
-    public function validate()
+    public function validate(&$msg = null)
     {
-        if (!@include_once 'VersionControl/SVN.php') {
-            Xinc_Logger::getInstance()->error(
-                'PEAR:VersionControl_SVN not installed.'
-            );
+		if(!class_exists('VersionControl_SVN',true)) {
+			$msg = 'PEAR:VersionControl_SVN not installed.';
             return false;
         }
         return true;

@@ -13,6 +13,7 @@
     ],
     "require": {
         "php": ">=5.4.4",
+        "xinc/core": "~2.5.0",
         "pear/versioncontrol_svn": "0.5.2"
     },
     "require-dev": {
@@ -21,7 +22,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Xinc\\Plugin\\Svn": "Classes"
+            "Xinc\\Plugin\\Svn\\": "Classes"
         }
     }
 }
