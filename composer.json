@@ -1,0 +1,27 @@
+{
+    "name": "xinc/svn",
+    "type": "xinc-library-package",
+    "description": "Subversion support for Xinc",
+    "homepage": "https://github.com/xinc-develop/xinc-plugin-svn",
+    "license": "LGPL-3.0+",
+    "authors": [
+        { "name": "David Ellis" },
+	{ "name": "Alexander Opitz", "email": "opitz.alexander@googlemail.com" },
+	{ "name": "Arno Schneider" },
+	{ "name": "Gavin Foster" },
+        { "name": "Sebastian Knapp", "email": "news@young-workers.de" }
+    ],
+    "require": {
+        "php": ">=5.4.4",
+        "pear/versioncontrol_svn": "0.5.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.8.*",
+        "fabpot/php-cs-fixer": "~1.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "Xinc\\Plugin\\Svn": "Classes"
+        }
+    }
+}
