@@ -40,6 +40,18 @@ class TestSvnTask extends BaseTest
 	public function testSvnValidate()
 	{
 	    $svn = new Svn(new Plugin());
-	    $this->assertTrue($svn->validateTask());
+	    $this->assertTrue($svn->validate());
+	}
+	
+	public function testSvnDefaultParameter()
+	{
+	    $svn = new Svn(new Plugin());
+	    
+	    $this->assertEquals('working-copy',$svn->getDirectory());
+	    $this->assertNull($svn->getUsername(),'username');
+	    $this->assertNUll($svn->getPassword(),'password');
+	    $this->assertNull($svn->getRepository(),'repository');
+	    $this->assertFalse($svn->doUpdate(),'do-update');
+	    $this->assertFalse($svn->trustServerCert(),'server-certificate');
 	}
 }

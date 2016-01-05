@@ -66,107 +66,7 @@ class Plugin extends Base
      *
      * @return Xinc_Plugin_Repos_ModificationSet_Result The result of the check.
      */
-    public function checkModified(
-        Xinc_Build_Interface $build,
-        Xinc_Plugin_Repos_ModificationSet_Svn_Task $task
-    ) {
-        $result = new Xinc_Plugin_Repos_ModificationSet_Result();
 
-        try {
-            $this->task = $task;
-            $this->svn = VersionControl_SVN::factory(
-                array('info', 'log', 'status', 'update'), 
-                array(
-                    'fetchmode' => VERSIONCONTROL_SVN_FETCHMODE_ASSOC,
-                    // @TODO VersionControl_SVN doesn't work as documented.
-                    // 'path'      => $task->getDirectory(),
-                    // 'url'       => $task->getRepository(),
-                    'username' => $task->getUsername(),
-                    'password' => $task->getPassword(),
-                    'trustServerCert' => $task->trustServerCert(),
-                )
-            );
-
-            $strRemoteVersion = $this->getRemoteVersion();
-            $strLocalVersion = $this->getLocalVersion();
-        } catch (VersionControl_SVN_Exception $e) {
-            $build->error('Test of Subversion failed: ' . $e->getMessage());
-            $build->setStatus(Xinc_Build_Interface::FAILED);
-            $result->setStatus(
-                Xinc_Plugin_Repos_ModificationSet_AbstractTask::ERROR
-            );
-            return $result;
-        }
-
-        $result->setRemoteRevision($strRemoteVersion);
-        $result->setLocalRevision($strLocalVersion);
-
-        if ($strRemoteVersion !== $strLocalVersion) {
-            try {
-                $this->getModifiedFiles($result);
-                $this->getChangeLog($result);
-                if ($this->task->doUpdate()) {
-                    $this->update($result);
-                }
-                $result->setStatus(
-                    Xinc_Plugin_Repos_ModificationSet_AbstractTask::CHANGED
-                );
-            } catch (Exception $e) {
-                var_dump($e->getMessage());
-                $build->error('Processing SVN failed: ' . $e->getMessage());
-                $result->setStatus(
-                    Xinc_Plugin_Repos_ModificationSet_AbstractTask::FAILED
-                );
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Gets remote version.
-     *
-     * @return string The remote version.
-     */
-    protected function getRemoteVersion()
-    {
-        return $this->getRevisionFromXML(
-            $this->svn->info->run(
-                array($this->task->getRepository())
-            )
-        );
-    }
-
-    /**
-     * Gets local version.
-     *
-     * @return string The local version.
-     */
-    protected function getLocalVersion()
-    {
-        return $this->getRevisionFromXML(
-            $this->svn->info->run(
-                array($this->task->getDirectory())
-            )
-        );
-    }
-
-    /**
-     * Returns the revison number from the PEAR::SVN Info XML
-     *
-     * @param array $arXml The XML as array from SVN info
-     *
-     * @return string Revision number
-     */
-    protected function getRevisionFromXML(array $arXml)
-    {
-        if (isset($arXml['entry'][0]['commit']['revision'])) {
-            // Latest commit in this directory path
-            return $arXml['entry'][0]['commit']['revision'];
-        }
-        // Latest commit in the whole repository
-        return $arXml['entry'][0]['revision'];
-    }
 
     /**
      * Gets the modified files between two revisions from SVN and puts this info
@@ -287,7 +187,7 @@ class Plugin extends Base
     public function validate(&$msg = null)
     {
 		if(!class_exists('VersionControl_SVN',true)) {
-			$msg = 'PEAR:VersionControl_SVN not installed.';
+			$msg = 'VersionControl_SVN not installed.';
             return false;
         }
         return true;

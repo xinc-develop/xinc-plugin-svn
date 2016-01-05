@@ -25,7 +25,7 @@
 use Xinc\Core\Config\Config;
 use Xinc\Core\Project\Project;
 use Xinc\Core\Project\Status as ProjectStatus;
-
+use Xinc\Core\Task\Slot;
 use Xinc\Core\Test\BaseTest;
 /**
  * @test Test class for Xinc::Core::Project::Project
@@ -34,15 +34,18 @@ class TestModificationSet extends BaseTest
 {  
 	public function testProjectFromConfig1()
 	{
-		$conf = new Config();
+		$conf = $this->defaultConfig();
 	    $conf->setOption('config-file', __DIR__ . '/config/plugins.xml');
 	    $conf->setOption('project-file', __DIR__ . '/config/project-svn.xml');
 	    
 	    $this->projectXml($conf,$reg)->load($conf,$reg);
+	    $build2 = $this->aBuildWithConfig($conf);
+	    $project = $reg->getProject("ProjectSvn");
+	    $this->assertInstanceOf('Xinc\Core\Project\Project',$project);
+	    
+	    $build2->process(Slot::PRE_PROCESS);
 	    
 	    return;
-	    $project = $reg->getProject("TestProjectProperty");
-	    $this->assertInstanceOf('Xinc\Core\Project\Project',$project);
 	    $iterator = $reg->getProjectIterator();
 	    $this->assertInstanceOf('ArrayIterator',$iterator);
 	    $project2 = $iterator->current();
