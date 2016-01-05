@@ -2,8 +2,7 @@
 <xinc>
 <project name="ProjectSvn">
     <modificationset>
-        <svn directory="/var/xinc/projects/ProjectName" update="true"/>
+        <svn directory="tests/working-copy/one" update="true"/>
     </modificationset>
 </project>
 </xinc>
-
