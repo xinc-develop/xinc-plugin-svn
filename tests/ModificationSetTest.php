@@ -55,10 +55,10 @@ class TestModificationSet extends BaseTest
 		$this->getSvnRoot();
 	    if(version_compare('1.7.0',$this->getSvnVersion(),'<=')) {
 			$old = $this->getSvnRoot();
-			exec("svn switch --relocate $old $repo");	
+			shell_exec("svn switch --relocate $old $repo");	
 		}
 		else {
-			exec("svn relocate $repo");
+			shell_exec("svn relocate $repo");
 		}
 		chdir($current);
 	}
@@ -66,7 +66,7 @@ class TestModificationSet extends BaseTest
 	public function setUp()
 	{
 	    $one = __DIR__ . '/working-copy/one';
-	    $repo = __DIR__ . '/repos/one';
+	    $repo = 'file://' . __DIR__ . '/repos/one';
 	    
 	    $this->relocateRepo($one,$repo);
 	}
