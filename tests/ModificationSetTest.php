@@ -33,11 +33,19 @@ use Xinc\Core\Test\BaseTest;
  */
 class TestModificationSet extends BaseTest
 {  
+	public function startRevision($wc,$rev)
+	{
+		$current = getcwd();
+		chdir($wc);
+		shell_exec("svn up -r $rev");
+		chdir($current);
+	}
+	
 	public function getSvnRoot()
 	{
 		exec('svn info --xml',$xml);
 		$xml = simplexml_load_string(join('',$xml));
-		$root = $xml->xpath('/info/entry/repository/root');
+		$root = $xml->xpath('/info/entry/url');
 		
 		return "{$root[0]}";
 	}
@@ -66,9 +74,10 @@ class TestModificationSet extends BaseTest
 	public function setUp()
 	{
 	    $one = __DIR__ . '/working-copy/one';
-	    $repo = 'file://' . __DIR__ . '/repos/one';
+	    $repo = 'file://' . __DIR__ . '/repos/one/trunk';
 	    
 	    $this->relocateRepo($one,$repo);
+	    $this->startRevision($one,2);
 	}
 	
 	public function testProjectFromConfig1()
@@ -81,9 +90,18 @@ class TestModificationSet extends BaseTest
 	    $build2 = $this->aBuildWithConfig($conf);
 	    $project = $reg->getProject("ProjectSvn");
 	    $this->assertInstanceOf('Xinc\Core\Project\Project',$project);
+	    
+	    $tasks = $build2->getTasksForSlot(Slot::PRE_PROCESS);
+	    
+	    $svn = $tasks->current();
+	    $svn->initSvn();
+	    $this->assertInstanceOf('Xinc\Plugin\Svn\ModificationSet\Task',$svn);
+	    $this->assertEquals('file://' . __DIR__ . '/repos/one/trunk',$svn->getRepository());
+	    
+	    
 	    $build2->process(Slot::PRE_PROCESS);
 	    
-	    $this->assertEquals($build2->getStatus(),BuildInterface::PASSED);
+	    $this->assertEquals($build2->getStatus(),BuildInterface::PASSED,'passed');
 	    
 	    return;
 	    $iterator = $reg->getProjectIterator();

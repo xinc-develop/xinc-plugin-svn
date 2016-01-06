@@ -124,6 +124,9 @@ class Task extends BaseTask
      */
     public function getRepository()
     {
+		if($this->strRepository === null) {
+		    return $this->getRepositoryUrl();	
+		}
         return $this->strRepository;
     }
 
@@ -215,17 +218,9 @@ class Task extends BaseTask
         return $this->trustServerCert;
     }
 
-    /**
-     * Check if this modification set has been modified
-     *
-     * @param BuildInterface $build The running build.
-     * @return Xinc::Core::Plugin::ModificationSet::Result The result of the check.
-     */
-    public function checkModified(BuildInterface $build)
+    public function initSvn()
     {
-        $result = new Result();
-
-        try {
+	
             $this->svn = VersionControl_SVN::factory(
                 array('info', 'log', 'status', 'update'), 
                 array(
@@ -237,7 +232,21 @@ class Task extends BaseTask
                     'password' => $this->getPassword(),
                     'trustServerCert' => $this->trustServerCert(),
                 )
-            );
+            );	
+	}
+
+    /**
+     * Check if this modification set has been modified
+     *
+     * @param BuildInterface $build The running build.
+     * @return Xinc::Core::Plugin::ModificationSet::Result The result of the check.
+     */
+    public function checkModified(BuildInterface $build)
+    {
+        $result = new Result();
+
+        try {
+			$this->initSvn();
 
             $strRemoteVersion = $this->getRemoteVersion();
             $strLocalVersion = $this->getLocalVersion();
@@ -263,7 +272,7 @@ class Task extends BaseTask
                     Xinc_Plugin_Repos_ModificationSet_AbstractTask::CHANGED
                 );
             } catch (Exception $e) {
-                var_dump($e->getMessage());
+                #var_dump($e->getMessage());
                 $build->error('Processing SVN failed: ' . $e->getMessage());
                 $result->setStatus(
                     Xinc_Plugin_Repos_ModificationSet_AbstractTask::FAILED
@@ -288,6 +297,92 @@ class Task extends BaseTask
         }
 
         return true;
+    }
+    
+    
+    /**
+     * Gets the modified files between two revisions from SVN and puts this info
+     * into the ModificationSet_Result.
+     *
+     * @param Xinc_Plugin_Repos_ModificationSet_Result $result The Result to get
+     *  Hash ids from and set modified files.
+     *
+     * @return void
+     * @todo exception handling
+     * @throw Xinc_Exception_ModificationSet
+     */
+    protected function getChangeLog(Result $result) 
+    {
+        $arLog = $this->svn->log->run(
+            array($this->task->getDirectory()),
+            array(
+                'r' => $result->getLocalRevision() + 1
+                    . ':' . $result->getRemoteRevision()
+            )
+        );
+        if (isset($arLog['logentry'])) {
+            foreach ($arLog['logentry'] as $arEntry) {
+                $result->addLogMessage(
+                    $arEntry['revision'],
+                    strtotime($arEntry['date']),
+                    $arEntry['author'],
+                    $arEntry['msg']
+                );
+            }
+        } else {
+            throw new Xinc_Exception_ModificationSet(
+                'SVN get log failed',
+                0
+            );
+        }
+    }
+
+
+    /**
+     * Gets the modified files between two revisions from svn and puts this info
+     * into the ModificationSet_Result.
+     *
+     * @param Xinc_Plugin_Repos_ModificationSet_Result $result The Result to get
+     *  Hash ids from and set modified files.
+     *
+     * @return void
+     * @throw Xinc_Exception_ModificationSet
+     */
+    protected function getModifiedFiles(Result $result) 
+    {
+        $arStatus = $this->svn->status->run(
+            array($this->task->getDirectory()),
+            array('u' => true)
+        );
+        $arTarget = $arStatus['target'][0];
+
+        $result->setBasePath($arTarget['path']);
+
+        if (isset($arTarget['entry'])) {
+            foreach ($arTarget['entry'] as $entry) {
+                $strFileName = $entry['path'];
+                $author = null;
+                if (isset($entry['repos-status'])) {
+                    $strReposStatus = $entry['repos-status']['item'];
+                } else {
+                    $strReposStatus = '';
+                }
+                switch ($strReposStatus) {
+                    case 'modified':
+                        $result->addUpdatedResource($strFileName, $author);
+                        break;
+                    case 'deleted':
+                        $result->addDeletedResource($strFileName, $author);
+                        break;
+                    case 'added':
+                        $result->addNewResource($strFileName, $author);
+                        break;
+                    case 'conflict':
+                        $result->addConflictResource($strFileName, $author);
+                        break;
+                }
+            }
+        }
     }
          
     /**
@@ -318,6 +413,15 @@ class Task extends BaseTask
         );
     }
 
+    public function getRepositoryUrl()
+    {
+        return $this->getRepositoryUrlFromXML(
+            $this->svn->info->run(
+                array($this->getDirectory())
+            )
+        );		
+	}
+
     /**
      * Returns the revison number from the PEAR::SVN Info XML
      *
@@ -333,4 +437,13 @@ class Task extends BaseTask
         // Latest commit in the whole repository
         return $arXml['entry'][0]['revision'];
     }
+    
+    /**
+     * Returns the root repository from SVN Info XML
+     * @return string repository url
+     */
+    protected function getRepositoryUrlFromXML(array $arXml)
+    {
+		return $arXml['entry'][0]['url'];
+	}
 }
