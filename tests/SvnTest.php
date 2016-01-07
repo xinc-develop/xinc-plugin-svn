@@ -22,6 +22,7 @@
  *    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+use Xinc\Core\Plugin\ModificationSet\Task as ModificationSet;
 use Xinc\Plugin\Svn\ModificationSet\Plugin;
 use Xinc\Plugin\Svn\ModificationSet\Task as Svn;
 use Xinc\Core\Test\BaseTest;
@@ -39,18 +40,24 @@ class TestSvnTask extends BaseTest
 	
 	public function testSvnValidate()
 	{
+	    $frame = new ModificationSet(new Plugin()); // ignore - it is not the "correct" plugin
+	    
 	    $svn = new Svn(new Plugin());
+	    $svn->setFrame($frame);
 	    $this->assertTrue($svn->validate());
 	}
 	
 	public function testSvnDefaultParameter()
 	{
 	    $svn = new Svn(new Plugin());
+	    $svn->initSvn();
 	    
 	    $this->assertEquals('working-copy',$svn->getDirectory());
+	    $svn->setDirectory('tests/working-copy/one'); // getRepository needs a working copy now
+	    
 	    $this->assertNull($svn->getUsername(),'username');
 	    $this->assertNUll($svn->getPassword(),'password');
-	    $this->assertNull($svn->getRepository(),'repository');
+	    $this->assertInternalType('string',$svn->getRepository(),'repository');
 	    $this->assertFalse($svn->doUpdate(),'do-update');
 	    $this->assertFalse($svn->trustServerCert(),'server-certificate');
 	}

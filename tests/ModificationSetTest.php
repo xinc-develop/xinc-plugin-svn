@@ -80,6 +80,15 @@ class TestModificationSet extends BaseTest
 	    $this->startRevision($one,2);
 	}
 	
+	public function tearDown()
+	{
+		$one = __DIR__ . '/working-copy/one';
+	    $repo = 'file:///home/ftr/xinc-plugin-svn/tests/repos/one/trunk';
+	    
+	    $this->relocateRepo($one,$repo);
+	    $this->startRevision($one,2);
+	}
+	
 	public function testProjectFromConfig1()
 	{
 		$conf = $this->defaultConfig();
@@ -97,18 +106,12 @@ class TestModificationSet extends BaseTest
 	    $svn->initSvn();
 	    $this->assertInstanceOf('Xinc\Plugin\Svn\ModificationSet\Task',$svn);
 	    $this->assertEquals('file://' . __DIR__ . '/repos/one/trunk',$svn->getRepository());
-	    
+	    $this->assertEquals('tests/working-copy/one',$svn->getDirectory());
 	    
 	    $build2->process(Slot::PRE_PROCESS);
 	    
 	    $this->assertEquals($build2->getStatus(),BuildInterface::PASSED,'passed');
 	    
 	    return;
-	    $iterator = $reg->getProjectIterator();
-	    $this->assertInstanceOf('ArrayIterator',$iterator);
-	    $project2 = $iterator->current();
-	    $this->assertSame($project,$project2);
-	    $engine = $reg->getEngine($project->getEngineName());
-	    $this->assertInstanceOf('Xinc\Core\Engine\EngineInterface',$engine);
 	 }
 }

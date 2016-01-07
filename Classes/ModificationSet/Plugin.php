@@ -37,11 +37,6 @@ class Plugin extends Base
      * @var VersionControl_SVN The svn object.
      */
     private $svn = null;
-
-    /**
-     * @var Xinc_Plugin_Repos_ModificationSet_Svn_Task The task config.
-     */
-    private $task = null;
     
     public function getName()
     {
@@ -59,37 +54,18 @@ class Plugin extends Base
     }
 
     /**
-     * Updates local svn to the remoteRevision for this test.
-     *
-     * @param Xinc_Plugin_Repos_ModificationSet_Result $result The Result to get
-     *  Hash ids from and set modified files.
-     *
-     * @return void
-     * @throw Xinc_Exception_ModificationSet
-     */
-    protected function update(
-        Xinc_Plugin_Repos_ModificationSet_Result $result
-    ) {
-        $arUpdate = $this->svn->update->run(
-            array($this->task->getDirectory()),
-            array('r' => $result->getRemoteRevision())
-        );
-
-        if (false === $arUpdate) {
-            throw new Xinc_Exception_ModificationSet(
-                'SVN update local working copy failed',
-                0
-            );
-        }
-    }
-
-    /**
      * Validate if the plugin can run properly on this system
      *
      * @return boolean True if plugin can run properly otherwise false.
      */
     public function validate(&$msg = null)
     {
+		// hidden dependency on installed PEAR
+		@include_once('System.php');
+		if(!class_exists('System')) {
+			$msg = "PEAR/System not found - is basic pear library installed?";
+			return false;
+		}
 		if(!class_exists('VersionControl_SVN',true)) {
 			$msg = 'VersionControl_SVN not installed.';
             return false;

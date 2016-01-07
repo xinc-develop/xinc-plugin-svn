@@ -29,11 +29,13 @@
  
 namespace Xinc\Plugin\Svn\ModificationSet;
 
+use Exception;
 use CastToType;
 use VersionControl_SVN;
 use Xinc\Core\Build\BuildInterface;
 use Xinc\Core\Exception\MalformedConfig;
 use Xinc\Core\Plugin\ModificationSet\BaseTask;
+use Xinc\Core\Plugin\ModificationSet\ModificationSetException;
 use Xinc\Core\Plugin\ModificationSet\Result;
 
 class Task extends BaseTask
@@ -220,14 +222,13 @@ class Task extends BaseTask
 
     public function initSvn()
     {
-	
             $this->svn = VersionControl_SVN::factory(
                 array('info', 'log', 'status', 'update'), 
                 array(
                     'fetchmode' => VERSIONCONTROL_SVN_FETCHMODE_ASSOC,
                     // @TODO VersionControl_SVN doesn't work as documented.
-                    // 'path'      => $task->getDirectory(),
-                    // 'url'       => $task->getRepository(),
+                    // 'path'      => $this->getDirectory(),
+                    // 'url'       => $this->getRepository(),
                     'username' => $this->getUsername(),
                     'password' => $this->getPassword(),
                     'trustServerCert' => $this->trustServerCert(),
@@ -244,6 +245,7 @@ class Task extends BaseTask
     public function checkModified(BuildInterface $build)
     {
         $result = new Result();
+        $result->setSource(get_class($this));
 
         try {
 			$this->initSvn();
@@ -265,22 +267,39 @@ class Task extends BaseTask
             try {
                 $this->getModifiedFiles($result);
                 $this->getChangeLog($result);
-                if ($this->task->doUpdate()) {
+                if ($this->doUpdate()) {
                     $this->update($result);
                 }
-                $result->setStatus(
-                    Xinc_Plugin_Repos_ModificationSet_AbstractTask::CHANGED
-                );
-            } catch (Exception $e) {
-                #var_dump($e->getMessage());
+                $result->setStatus(Result::CHANGED);
+            } 
+            catch (Exception $e) {
                 $build->error('Processing SVN failed: ' . $e->getMessage());
-                $result->setStatus(
-                    Xinc_Plugin_Repos_ModificationSet_AbstractTask::FAILED
-                );
+                $result->setStatus(Result::FAILED);
             }
         }
 
         return $result;
+    }
+    
+    /**
+     * Updates local svn to the remoteRevision for this test.
+     *
+     * @param Xinc::Core::Plugin::ModificationSet::Result $result The Result to get
+     *  Hash ids from and set modified files.
+     *
+     * @return void
+     * @throw Xinc::Core::Plugin::ModificationSet::ModificationSetException
+     */
+    protected function update(Result $result)
+    {
+        $arUpdate = $this->svn->update->run(
+            array($this->getDirectory()),
+            array('r' => $result->getRemoteRevision())
+        );
+
+        if (false === $arUpdate) {
+            throw new ModificationSetException('SVN update local working copy failed', 0);
+        }
     }
 
     /**
@@ -295,26 +314,25 @@ class Task extends BaseTask
             $msg = 'Element modificationSet/svn - required attribute "directory" is not set.';
             return false;
         }
+        parent::validate($msg);
 
         return true;
     }
-    
     
     /**
      * Gets the modified files between two revisions from SVN and puts this info
      * into the ModificationSet_Result.
      *
-     * @param Xinc_Plugin_Repos_ModificationSet_Result $result The Result to get
+     * @param Xinc::Core::Plugin::ModificationSet::Result $result The Result to get
      *  Hash ids from and set modified files.
      *
      * @return void
-     * @todo exception handling
-     * @throw Xinc_Exception_ModificationSet
+     * @throw Xinc::Core::Plugin::ModificationSet::ModificationSetException
      */
     protected function getChangeLog(Result $result) 
     {
         $arLog = $this->svn->log->run(
-            array($this->task->getDirectory()),
+            array($this->getDirectory()),
             array(
                 'r' => $result->getLocalRevision() + 1
                     . ':' . $result->getRemoteRevision()
@@ -330,10 +348,7 @@ class Task extends BaseTask
                 );
             }
         } else {
-            throw new Xinc_Exception_ModificationSet(
-                'SVN get log failed',
-                0
-            );
+            throw new ModificationSetException('SVN get log failed',0);
         }
     }
 
@@ -351,7 +366,7 @@ class Task extends BaseTask
     protected function getModifiedFiles(Result $result) 
     {
         $arStatus = $this->svn->status->run(
-            array($this->task->getDirectory()),
+            array($this->getDirectory()),
             array('u' => true)
         );
         $arTarget = $arStatus['target'][0];
