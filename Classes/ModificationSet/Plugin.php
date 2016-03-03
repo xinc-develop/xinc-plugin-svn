@@ -32,12 +32,7 @@ namespace Xinc\Plugin\Svn\ModificationSet;
 use Xinc\Core\Plugin\Base;
 
 class Plugin extends Base
-{
-    /**
-     * @var VersionControl_SVN The svn object.
-     */
-    private $svn = null;
-    
+{    
     public function getName()
     {
 		return 'ModificationSet/SVN';
